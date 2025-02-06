@@ -34,7 +34,7 @@ def format_date(date):
 
 def get_article_data_from(url):
     try:
-        # Download and parse NLTK resources
+        # Download and parse NLTK resources with punkt pre-trained tokenizer
         nltk.download('punkt', quiet=True)
         
         article = newspaper.article(url)
@@ -45,10 +45,14 @@ def get_article_data_from(url):
         # Prepare formatted output
         output = []
         
-        # Title
+        # Article Details Heading
         output.append("=" * 50)
         output.append(f"ARTICLE DETAILS".center(50))
         output.append("=" * 50)
+
+        # Title
+        output.append(f"\n📰 TITLE:")
+        output.append(f"   {article.title}")
         
         # Authors
         if article.authors:
