@@ -1,7 +1,6 @@
 from flask import Flask, request
 import nltk
 import newspaper
-import textwrap
 import tldextract
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
@@ -120,7 +119,7 @@ def get_article_data_from(url):
 
             <div style="margin-bottom: 15px;">
                 <strong>🗞️ TITLE:</strong><br>
-                <u>'{html.escape(article.title)}'</u><br>
+                <u><a href="{url}" target="_blank">'{html.escape(article.title)}'</a></u><br>
             </div>
             
             <div style="margin-bottom: 15px;">
@@ -258,16 +257,41 @@ def index():
                         }}
                     }});
                 }}
-            }});
+
+                // Add fade-in effect for results
+                const resultsDiv = document.getElementById("results");
+                if (resultsDiv && resultsDiv.innerHTML.trim() !== "") {{
+                    setTimeout(function() {{
+                        resultsDiv.style.opacity = 1;
+                    }}, 200);
+                }}    
+           }});
         </script>
     </head>
-    <body>
-        <form action="" method="get" style="max-width: 600px; margin: 20px;">
-            <label for="url">Enter/Paste Article URL here:</label><br>
-            <input type="url" id="url" name="url" style="width: 100%; padding: 10px; margin: 10px 0;"><br>
-            <input type="submit" value="Analyse Article" style="padding: 10px; background-color: #4CAF50; color: white; border: none;">
-        </form>
+    <body style="display: flex; flex-direction: column; align-items: center; text-align: justify; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
+            <form action="" method="get" style="width: 100%; max-width: 600px; margin: 20px; text-align: center;">
+                <label for="url"><strong>ENTER ARTICLE URL BELOW:</strong></label><br>
+                <input type="url" id="url" name="url" style="width: 100%; padding: 10px; margin: 20px 0; strong;"><br>
+                <input type="submit" value="ANALYSE ARTICLE" style="padding: 10px; background-color: #4CAF50; color: black; border: 3px black; cursor: pointer; onclick="showResults(event)">
+            </form>
+    
+        <div id="results" style="width: 100%; max-width: 800px; margin: 20px; opacity: 0; transition: opacity 1s ease-in-out;">
         {extracted_article_data}
+        </div>
+
+        <button onclick="window.scrollTo({{ top: 0, behavior: 'smooth' }})" id="backToTopBtn" style="position: fixed; bottom: 20px; right: 20px; padding: 10px 15px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">Back to Top</button>
+
+        <script>
+            // Back to top button functionality
+            window.onscroll = function() {{
+                const mybutton = document.getElementById("backToTopBtn");
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {{
+                    mybutton.style.display = "block";
+                }} else {{
+                    mybutton.style.display = "none";
+                }}
+            }};
+        </script>
     </body>
     </html>
     """
