@@ -47,6 +47,55 @@ def format_date(date):
         # Fallback if formatting fails
         return str(date)
 
+def filter_authors(authors, publication_name):
+    # Make sure publication_name is a string
+    if isinstance(publication_name, dict):
+        # If it's a dictionary, try to extract a relevant string field
+        publication_name = publication_name.get('name', '') or publication_name.get('title', '') or str(publication_name)
+    
+    # Convert publication name to lowercase for case-insensitive comparison
+    pub_name_lower = str(publication_name).lower()
+    
+    # Common publication words that might appear in author lists
+    common_pub_words = ['www.facebook.com', 'news', 'times', 'post', 'daily', 'guardian', 'mail', 
+                        'journal', 'chronicle', 'tribune', 'gazette', 'herald', 'bbc']
+    
+    filtered_authors = []
+    seen_authors = set()  # To track normalized versions of authors already added
+    for author in authors:
+        # Skip if the author name is empty or just whitespace
+        if not author or author.strip() == '':
+            continue
+            
+        # Skip if the author name is the publication name
+        if author.lower() == pub_name_lower:
+            continue
+            
+        # Skip if the author name contains the publication name and is less than 35 characters
+        # (To avoid filtering out quotes that legitimately contain the publication name)
+        if pub_name_lower in author.lower() and len(author) < 35:
+            continue
+            
+        # Skip if the author name is just one of the common publication words
+        if author.lower() in common_pub_words:
+            continue
+
+        # Create a normalized version of the author name for comparison
+        # Remove spaces, hyphens, underscores and convert to lowercase
+        normalized_author = author.lower()
+        normalized_author = normalized_author.replace(' ', '').replace('-', '').replace('_', '')
+
+        # Skip if we've already seen this author (based on normalized name)
+        if normalized_author in seen_authors:
+            continue
+            
+        # Add this normalized version to our seen set
+        seen_authors.add(normalized_author)
+
+        filtered_authors.append(author)
+    
+    return filtered_authors
+
 def analyze_sentiment(text):
     """
     Analyze sentiment of text and return both highlighted and plain versions
@@ -89,8 +138,12 @@ def get_article_data_from(url):
         
         # Get publication details with error checking
         pub_details = get_publication_details(url)
-        if not isinstance(pub_details, dict):
-            pub_details = {"name": "Unknown Publication"}
+        publication_name = pub_details.get('name', 'Unknown')
+        if isinstance(publication_name, dict):
+            # Extract the actual name from the dictionary
+            publication_string = publication_name.get('name', '')
+        else:
+            publication_string = publication_name
         
         article = newspaper.Article(url)
         article.download()
@@ -104,6 +157,9 @@ def get_article_data_from(url):
         # Get both highlighted and plain versions of the text
         highlighted_text, plain_text = analyze_sentiment(article_text)
         highlighted_summary, plain_summary = analyze_sentiment(article_summary)
+
+        # Filter authors
+        filtered_authors = filter_authors(article.authors, publication_string)
         
         # Create the HTML output with error checking for each component
         output = f"""
@@ -123,8 +179,8 @@ def get_article_data_from(url):
             </div>
             
             <div style="margin-bottom: 15px;">
-                <strong>🖋️ AUTHORS:</strong><br>
-                {('<br>'.join(f'• {html.escape(author)}' for author in article.authors)) if article.authors else 'No authors found'}
+                <strong>🖋️ AUTHOR(S):</strong><br>
+                {('<br>'.join(f'• {html.escape(author)}' for author in filtered_authors)) if filtered_authors else 'No authors found'}
             </div>
             
             <div style="margin-bottom: 15px;">
@@ -181,7 +237,7 @@ def index():
     <html>
     <head>
         <style>
-            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            body {{ font-family: Arial, sans-serif; margin: 20px;  }}
             
             /* Toggle Switch Styles */
             .switch {{
@@ -263,12 +319,12 @@ def index():
                 if (resultsDiv && resultsDiv.innerHTML.trim() !== "") {{
                     setTimeout(function() {{
                         resultsDiv.style.opacity = 1;
-                    }}, 200);
+                    }}, 100);
                 }}    
            }});
         </script>
     </head>
-    <body style="display: flex; flex-direction: column; align-items: center; text-align: justify; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
+    <body style="background-color: moccasin; display: flex; flex-direction: column; align-items: center; text-align: justify; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
             <form action="" method="get" style="width: 100%; max-width: 600px; margin: 20px; text-align: center;">
                 <label for="url"><strong>ENTER ARTICLE URL BELOW:</strong></label><br>
                 <input type="url" id="url" name="url" style="width: 100%; padding: 10px; margin: 20px 0; strong;"><br>
