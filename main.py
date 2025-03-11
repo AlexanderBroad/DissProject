@@ -1,8 +1,12 @@
 from flask import Flask, request
+import spacy
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import pipeline
 import nltk
 import newspaper
 import tldextract
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from NewsSentiment import TargetSentimentClassifier
 from nltk.tokenize import sent_tokenize
 import html
 
@@ -131,7 +135,58 @@ def analyze_sentiment(text):
     except Exception as e:
         print(f"Error in analyze_sentiment: {str(e)}")
         return html.escape(text) if text else "", html.escape(text) if text else ""
+
+def analyze_sentiment_newssentiment(text):
+    """
+    Analyze sentiment of text using NewsSentiment and return both highlighted and plain versions
+    """
+    if not text:
+        return "", ""
+        
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("dslim/bert-large-NER")
+        model = AutoModelForTokenClassification.from_pretrained("dslim/bert-large-NER")
+        nlp = pipeline("ner", model=model, tokenizer=tokenizer)
+        sentences = nlp(sent_tokenize(text))
+        #ner_spans = nlp(sentences)
+        # Initialize the NewsSentiment classifier
+        classifier = TargetSentimentClassifier()
+        
+        # Tokenize the text into sentences
+        highlighted_text = []
+        plain_text = []
+
+        #for sentence in sentences:
+        for sentence in sentences:
+            l = sentences[:sentence['start']]
+            m = sentences[sentence['start']:sentence['end']]
+            r = sentences[sentence['end']:]
+            # Get sentiment prediction from NewsSentiment
+            prediction = classifier.infer_from_text(l, m, r)
+            
+            # Map NewsSentiment labels to colour scheme
+            sentiment_label = prediction.label
+            confidence = prediction.confidence
+            
+            if sentiment_label == "positive":
+                color = "#90EE90"  # Light green for positive
+            elif sentiment_label == "negative":
+                color = "#FFB6C1"  # Light red for negative
+            else:
+                color = "#F0F8FF"  # Light blue for neutral
+            
+            # Create highlighted version with sentiment info in tooltip
+            highlighted_sentence = f'<span style="background-color: {color};" title="{sentiment_label} (confidence: {confidence:.2f})">{html.escape(sentence)}</span>'
+            highlighted_text.append(highlighted_sentence)
+            plain_text.append(html.escape(sentence))
+
+        return " ".join(highlighted_text), " ".join(plain_text)
     
+    except Exception as e:
+        print(f"Error in analyze_sentiment: {str(e)}")
+        # Fallback to original text if there's an error
+        return html.escape(text) if text else "", html.escape(text) if text else ""
+
 def get_article_data_from(url):
     try:
         initialize_nltk()
@@ -155,8 +210,8 @@ def get_article_data_from(url):
         article_summary = article.summary if article.summary else "No summary available"
 
         # Get both highlighted and plain versions of the text
-        highlighted_text, plain_text = analyze_sentiment(article_text)
-        highlighted_summary, plain_summary = analyze_sentiment(article_summary)
+        highlighted_text, plain_text = analyze_sentiment_newssentiment(article_text)
+        highlighted_summary, plain_summary = analyze_sentiment_newssentiment(article_summary)
 
         # Filter authors
         filtered_authors = filter_authors(article.authors, publication_string)
