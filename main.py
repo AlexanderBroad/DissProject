@@ -30,9 +30,174 @@ def get_publication_details(url):
             "name": "Unknown Publication",
         }
         
+        # Publication name mapping
+        publication_mapping = {
+            # Major global news publications
+            "nytimes": "The New York Times",
+            "washingtonpost": "The Washington Post",
+            "wsj": "The Wall Street Journal",
+            "guardian": "The Guardian",
+            "bbc": "BBC News",
+            "cnn": "CNN",
+            "foxnews": "Fox News",
+            "nbcnews": "NBC News",
+            "cbsnews": "CBS News",
+            "abcnews": "ABC News",
+            "reuters": "Reuters",
+            "apnews": "Associated Press",
+            "bloomberg": "Bloomberg",
+            "economist": "The Economist",
+            "usatoday": "USA Today",
+            "latimes": "Los Angeles Times",
+            "chicagotribune": "Chicago Tribune",
+            "huffpost": "HuffPost",
+            "npr": "NPR",
+            "forbes": "Forbes",
+            "businessinsider": "Business Insider",
+            "theatlantic": "The Atlantic",
+            "politico": "Politico",
+            "vox": "Vox",
+            "slate": "Slate",
+            
+            # UK National Newspapers and News Sites
+            "theguardian": "The Guardian",
+            "thetimes": "The Times",
+            "telegraph": "The Telegraph",
+            "independent": "The Independent",
+            "ft": "Financial Times",
+            "dailymail": "Daily Mail",
+            "mailonline": "Daily Mail",
+            "mirror": "The Mirror",
+            "express": "Daily Express",
+            "thesun": "The Sun",
+            "standard": "Evening Standard",
+            "metro": "Metro",
+            "dailystar": "Daily Star",
+            "dailyrecord": "Daily Record",
+            "observer": "The Observer",
+            "ipaper": "i",
+            "inews": "i News",
+            "morningstar": "Morning Star",
+            "newstatesman": "New Statesman",
+            "spectator": "The Spectator",
+            "economist": "The Economist",
+            "private-eye": "Private Eye",
+            "prospect": "Prospect Magazine",
+            "standpoint": "Standpoint",
+            
+            # UK Online News Sites
+            "unherd": "UnHerd",
+            "bylinetimes": "Byline Times",
+            "tortoise": "Tortoise Media",
+            "theconversation": "The Conversation UK",
+            "opendemocracy": "openDemocracy",
+            "huffingtonpost": "HuffPost UK",
+            "politicshome": "PoliticsHome",
+            "politico": "POLITICO Europe",
+            "politicaluk": "Political UK",
+            "thecanary": "The Canary",
+            "novara": "Novara Media",
+            "tribunemag": "Tribune",
+            "thejc": "The Jewish Chronicle",
+            "pinknews": "PinkNews",
+            "theduran": "The Duran",
+            "thetab": "The Tab",
+            
+            # UK Regional/Local News
+            "manchestereveningnews": "Manchester Evening News",
+            "liverpoolecho": "Liverpool Echo",
+            "birminghammail": "Birmingham Mail",
+            "bristolpost": "Bristol Post",
+            "leicestermercury": "Leicester Mercury",
+            "nottinghampost": "Nottingham Post",
+            "chroniclelive": "ChronicleLive",
+            "walesonline": "WalesOnline",
+            "leeds-live": "Leeds Live",
+            "yorkshirepost": "The Yorkshire Post",
+            "yorkshireeveningpost": "Yorkshire Evening Post",
+            "thenational": "The National",
+            "edinburghnews": "Edinburgh Evening News",
+            "scotsman": "The Scotsman",
+            "scottishsun": "The Scottish Sun",
+            "glasgowlive": "Glasgow Live",
+            "glasgowtimes": "Glasgow Times",
+            "examiner": "Huddersfield Examiner",
+            "coventrytelegraph": "Coventry Telegraph",
+            "gazettelive": "Teesside Live",
+            "bournemouthecho": "Bournemouth Echo",
+            "plymouthherald": "Plymouth Herald",
+            "shropshirestar": "Shropshire Star",
+            "expressandstar": "Express & Star",
+            "belfasttelegraph": "Belfast Telegraph",
+            "irishnews": "The Irish News",
+            "newsletter": "News Letter",
+            "impartialreporter": "The Impartial Reporter",
+            "derbyshiretimes": "Derbyshire Times",
+            "kentonline": "Kent Online",
+            "cambridge-news": "Cambridge News",
+            "thenorthernecho": "The Northern Echo",
+            "eveningtelegraph": "Evening Telegraph",
+            "pressandjournal": "Press and Journal",
+            "eveningexpress": "Evening Express",
+            "southwalesargus": "South Wales Argus",
+            "western-mail": "Western Mail",
+            "eveningstandard": "Evening Standard",
+            "theboltonnews": "The Bolton News",
+            "thelancasterandmorecambecitizen": "The Lancaster and Morecambe Citizen",
+            
+            # UK Business/Finance
+            "cityam": "City A.M.",
+            "thisismoney": "This is Money",
+            "investorschronicle": "Investors Chronicle",
+            "moneyweek": "MoneyWeek",
+            "business-live": "Business Live",
+            "citywire": "Citywire",
+            "ftadviser": "FT Adviser",
+            "uktech": "UK Tech News",
+            "siliconrepublic": "Silicon Republic",
+            "techmarketview": "TechMarketView",
+            
+            # UK Magazines and Specialty Media
+            "newscientist": "New Scientist",
+            "thegrocer": "The Grocer",
+            "farmersweekly": "Farmers Weekly",
+            "nursing-times": "Nursing Times",
+            "healthservicejournal": "Health Service Journal",
+            "bmj": "The BMJ",
+            "lrb": "London Review of Books",
+            "timeshighereducation": "Times Higher Education",
+            "thedrinksbusiness": "The Drinks Business",
+            "architectsjournal": "Architects' Journal",
+            "theengineer": "The Engineer",
+            "computing": "Computing",
+            "computerweekly": "Computer Weekly"
+        }
+        
+        # Check for domains with and without 'www' prefix
+        domain = ext.domain.lower()
+        domain_with_suffix = f"{domain}.{ext.suffix}".lower()
+        
         # Only update if we have valid domain information
-        if ext.domain:
-            details["name"] = ext.domain.title()
+        if domain:
+            # First check if domain is in our mapping
+            if domain in publication_mapping:
+                details["name"] = publication_mapping[domain]
+            # Then check domain with suffix
+            elif domain_with_suffix in publication_mapping:
+                details["name"] = publication_mapping[domain_with_suffix]
+            # Check for common UK newspaper domains
+            elif domain.startswith("the") and domain[3:] in publication_mapping:
+                details["name"] = publication_mapping[domain[3:]]
+            else:
+                # Fallback to basic formatting with some improvements
+                if domain.startswith("the"):
+                    # Properly capitalize "The" for publications
+                    words = domain.split("-")
+                    capitalized_words = [word.capitalize() for word in words]
+                    details["name"] = " ".join(capitalized_words)
+                else:
+                    details["name"] = domain.replace("-", " ").title()
+        
         return details
     
     except Exception as e:
@@ -40,7 +205,7 @@ def get_publication_details(url):
         return {
             "name": "Unknown Publication",
         }
-
+    
 def format_date(date):
     if date is None:
         return "No date available"
@@ -99,195 +264,6 @@ def filter_authors(authors, publication_name):
         filtered_authors.append(author)
     
     return filtered_authors
-    """
-    Analyze sentiment of text and return both highlighted and plain versions
-    """
-    if not text:
-        return "", ""
-        
-    try:
-        sia = SentimentIntensityAnalyzer()
-        sentences = sent_tokenize(text)
-        highlighted_text = []
-        plain_text = []
-
-        for sentence in sentences:
-            scores = sia.polarity_scores(sentence)
-            compound_score = scores['compound']
-            
-            if compound_score >= 0.05:
-                color = "#90EE90"  # Light green for positive
-                label = "positive"
-            elif compound_score <= -0.05:
-                color = "#FFB6C1"  # Light red for negative
-                label = "negative"
-            else:
-                color = "#F0F8FF"  # Light blue for neutral
-                label = "neutral"
-
-            highlighted_sentence = f'<span style="background-color: {color};" title="{label} ({compound_score:.2f})">{html.escape(sentence)}</span>'
-            highlighted_text.append(highlighted_sentence)
-            plain_text.append(html.escape(sentence))
-
-        return " ".join(highlighted_text), " ".join(plain_text)
-    except Exception as e:
-        print(f"Error in analyze_sentiment: {str(e)}")
-        return html.escape(text) if text else "", html.escape(text) if text else ""
-
-
-    """
-    Analyze sentiment of text using NewsSentiment and return both highlighted and plain versions
-    """
-    if not text:
-        return "", ""
-        
-    try:
-        # Load NER model
-        tokenizer = AutoTokenizer.from_pretrained("dslim/bert-large-NER")
-        model = AutoModelForTokenClassification.from_pretrained("dslim/bert-large-NER")
-
-        # Use aggregation_strategy to get world_level entities
-        nlp = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
-        
-        # Get named entities
-        ner_results = nlp(text)
-
-        # Initialise target sentiment classifier
-        tsc = TargetSentimentClassifier()
-
-        # Store entity sentiment data
-        entity_sentiments = {}
-
-        # Create a list of (entity, start, end, sentiment) tuples to process later
-        entity_data = []
-
-        # Process each entity
-        for entity in ner_results:
-            entity_text = entity['word']
-            start = entity['start']
-            end = entity['end']
-
-            # Skip invalid entities
-            if start is None or end is None or start >= end:
-                continue
-
-            # Get left context, target, and right context for NewsSentiment
-            left_context = text[:start]
-            target = text[start:end]
-            right_context = text[end:]
-
-            # Get sentiment
-            try:
-                # The output is a tuple of dictionaries with sentiment scores
-                sentiment_result = tsc.infer_from_text(left_context, target, right_context)
-
-                # Extract sentiment data
-                sentiment_label = sentiment_result[0]['class_label']
-                confidence = sentiment_result[0]['class_prob']
-
-            except Exception as inner_e:
-                print(f"Error in sentiment analysis for entity '{target}': {str(inner_e)}")
-                # Default to neutral if sentiment analysis fails
-                sentiment_label = "neutral"
-                confidence = 0.5
-
-            # Store entity info for later processing
-            entity_data.append((target, start, end, sentiment_label, confidence))
-
-            # Store in our results dictionary
-            if target not in entity_sentiments:
-                entity_sentiments[target] = {
-                    'sentiment': sentiment_label,
-                    'confidence': confidence,
-                    'entity_type': entity['entity_group']
-                }
-        
-        # Sort entities by their position in text to handle overlapping entities
-        entity_data.sort(key=lambda x: x[1])
-        
-        # Create highlighted HTML version
-        highlighted_text = ""
-        plain_text = html.escape(text)  # This is for the plain version
-        last_pos = 0
-        
-        for entity, start, end, sentiment, confidence in entity_data:
-            # Add text before entity
-            highlighted_text += html.escape(text[last_pos:start])
-            
-            # Determine colour based on sentiment
-            if sentiment == "positive":
-                color = "#90EE90"  # Light green for positive
-            elif sentiment == "negative":
-                color = "#FFB6C1"  # Light red for negative
-            else:
-                color = "#F0F8FF"  # Light blue for neutral
-            
-            # Add highlighted entity with tooltip
-            entity_span = f'<span style="background-color: {color}; font-weight: bold;" title="{sentiment} (confidence: {confidence:.2f})">{html.escape(entity)}</span>'
-            highlighted_text += entity_span
-            
-            last_pos = end
-        
-        # Add remaining text
-        highlighted_text += html.escape(text[last_pos:])
-        
-        return plain_text, highlighted_text, entity_sentiments
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"Error in analyze_entity_sentiments: {str(e)}")
-        escaped_text = html.escape(text) if text else ""
-        return escaped_text, escaped_text, {}
-
-
-    """
-    Analyze sentiment of text using NewsSentiment and return both highlighted and plain versions
-    """
-    if not text:
-        return "", ""
-        
-    try:
-        # Initialize the NewsSentiment classifier
-        classifier = TargetSentimentClassifier()
-        
-        # Tokenize the text into sentences
-        sentences = sent_tokenize(text)
-        highlighted_text = []
-        plain_text = []
-        
-        for sentence in sentences:
-            # Based on the error, infer() is expecting a specific format with target and context
-            # For general sentiment analysis, we can use the sentence as both the text and target
-            predictions = classifier.infer([(sentence, sentence)])
-            
-            # Check if we got valid predictions
-            if predictions and len(predictions) > 0:
-                sentiment_label = predictions[0].label
-                confidence = predictions[0].confidence
-            else:
-                sentiment_label = "neutral"
-                confidence = 0.0
-            
-            # Map NewsSentiment labels to your color scheme
-            if sentiment_label == "positive":
-                color = "#90EE90"  # Light green for positive
-            elif sentiment_label == "negative":
-                color = "#FFB6C1"  # Light red for negative
-            else:
-                color = "#F0F8FF"  # Light blue for neutral
-            
-            # Create highlighted version with sentiment info in tooltip
-            highlighted_sentence = f'<span style="background-color: {color};" title="{sentiment_label} (confidence: {confidence:.2f})">{html.escape(sentence)}</span>'
-            highlighted_text.append(highlighted_sentence)
-            plain_text.append(html.escape(sentence))
-        
-        return " ".join(highlighted_text), " ".join(plain_text)
-    
-    except Exception as e:
-        print(f"Error in analyze_sentiment: {str(e)}")
-        # Fallback to original text if there's an error
-        return html.escape(text) if text else "", html.escape(text) if text else ""
 
 def analyze_sentiment_newssentiment(text):
     """
@@ -564,6 +540,73 @@ def generate_top_entities_report(entity_sentiments):
     
     return top_entities
 
+def generate_entities_html(top_entities):
+    """
+    Generate HTML for the top entities display
+    
+    Args:
+        top_entities: List of dictionaries with entity information
+        
+    Returns:
+        HTML string for the entities section
+    """
+    if not top_entities:
+        return ""
+    
+    entities_html = """
+    <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <strong>🔍 TOP ENTITIES:</strong>
+        <label class="switch toggle-section" style="transform: scale(0.7);">
+                <input type="checkbox" checked id="topEntitiesToggle">
+                <span class="slider round"></span>
+        </label>
+        </div>
+        <div style="margin-top: 15px;" id="topEntitiesContent">
+    """
+    
+    for entity in top_entities:
+        # Determine the color based on sentiment
+        if entity["sentiment"] == "positive":
+            border_colour = "#90EE90"  # Light green
+            bg_colour = "#90EE90"
+        elif entity["sentiment"] == "negative":
+            border_colour = "#FFB6C1"  # Light pink
+            bg_colour = "#FFB6C1" 
+        else:
+            border_colour = "#F0F8FF"  # Light blue
+            bg_colour = "#A9D0F5"
+        
+        # Calculate confidence percentage for display
+        confidence_pct = f"{entity['confidence'] * 100:.1f}%"
+        confidence_width = f"{entity['confidence'] * 100}%"
+        
+        # Create the entity cards
+        entities_html += f"""
+        <div style="border: 1px solid #ddd; border-left: 5px solid {border_colour}; border-radius: 8px; 
+                  padding: 15px; margin-bottom: 15px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">{html.escape(entity['name'])}</h3>
+                <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; 
+                           background-color: #f0f0f0; font-size: 0.8em;">{entity['type']}</span>
+            </div>
+            <p style="margin: 8px 0;">Occurrences: {entity['occurrences']}</p>
+            <p style="margin: 8px 0;">Sentiment: {entity['sentiment'].capitalize()}</p>
+            <div style="height: 8px; background-color: #e0e0e0; border-radius: 4px; margin-top: 8px;">
+                <div style="height: 100%; border-radius: 4px; width: {confidence_width}; 
+                          background-color: {bg_colour};"></div>
+            </div>
+            <p style="text-align: right; font-size: 0.8em; margin: 5px 0 0 0;">Confidence: {confidence_pct}</p>
+        </div>
+        """
+    
+    entities_html += """
+        </div>
+    </div>
+    """
+    
+    return entities_html
+
 def get_article_data_from(url):
     try:
         initialize_nltk()
@@ -637,94 +680,72 @@ def get_article_data_from(url):
                 </div>
                 
                 <label class="switch">
-                    <input type="checkbox" id="sentimentToggle">
+                    <input type="checkbox" checked id="sentimentToggle">
                     <span class="slider round"></span>
                 </label>
             </div>
             
             <div style="margin-bottom: 15px;">
-                <strong>📋 SUMMARY:</strong><br>
-                <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <strong>📋 SUMMARY:</strong>
+                    <label class="switch toggle-section" style="transform: scale(0.7);">
+                        <input type="checkbox" id="summaryToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 10px; display: none;" id="summaryContent">
                     <div class="text-plain">{plain_summary}</div>
                     <div class="text-highlighted" style="display: none;">{highlighted_summary}</div>
                 </div>
             </div>
 
             <div style="margin-bottom: 15px;">
-                <strong>📄 ARTICLE TEXT:</strong><br>
-                <div style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <strong>📄 ARTICLE TEXT:</strong>
+                    <label class="switch toggle-section" style="transform: scale(0.7);">
+                        <input type="checkbox" checked id="articleToggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 10px;" id="articleContent">
                     <div class="text-plain">{plain_text}</div>
                     <div class="text-highlighted" style="display: none;">{highlighted_text}</div>
                 </div>
             </div>
         </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {{
+            // Toggle for summary section
+            const summaryToggle = document.getElementById('summaryToggle');
+            const summaryContent = document.getElementById('summaryContent');
+            
+            summaryToggle.addEventListener('change', function() {{
+                summaryContent.style.display = this.checked ? 'block' : 'none';
+            }});
+            
+            // Toggle for article text section
+            const articleToggle = document.getElementById('articleToggle');
+            const articleContent = document.getElementById('articleContent');
+            
+            articleToggle.addEventListener('change', function() {{
+                articleContent.style.display = this.checked ? 'block' : 'none';
+            }});
+            // Toggle for top entities section
+            const topEntitiesToggle = document.getElementById('topEntitiesToggle');
+            const topEntitiesContent = document.getElementById('topEntitiesContent');
+            
+            topEntitiesToggle.addEventListener('change', function() {{
+                topEntitiesContent.style.display = this.checked ? 'block' : 'none'; 
+            }});
+        }});
+        </script>
         """
         return output
     
     except Exception as e:
         print(f"Error in get_article_data_from: {str(e)}")  # For debugging
         return f"Error extracting article: {str(e)}"
-
-def generate_entities_html(top_entities):
-    """
-    Generate HTML for the top entities display
-    
-    Args:
-        top_entities: List of dictionaries with entity information
-        
-    Returns:
-        HTML string for the entities section
-    """
-    if not top_entities:
-        return ""
-    
-    entities_html = """
-    <div style="margin-bottom: 25px;">
-        <strong>🔍 TOP ENTITIES:</strong>
-        <div style="margin-top: 15px;">
-    """
-    
-    for entity in top_entities:
-        # Determine the color based on sentiment
-        if entity["sentiment"] == "positive":
-            border_color = "#90EE90"  # Light green
-            bg_color = "#90EE90"
-        elif entity["sentiment"] == "negative":
-            border_color = "#FFB6C1"  # Light pink
-            bg_color = "#FFB6C1" 
-        else:
-            border_color = "#F0F8FF"  # Light blue
-            bg_color = "#A9D0F5"
-        
-        # Calculate confidence percentage for display
-        confidence_pct = f"{entity['confidence'] * 100:.1f}%"
-        confidence_width = f"{entity['confidence'] * 100}%"
-        
-        # Create the entity cards
-        entities_html += f"""
-        <div style="border: 1px solid #ddd; border-left: 5px solid {border_color}; border-radius: 8px; 
-                  padding: 15px; margin-bottom: 15px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0;">{html.escape(entity['name'])}</h3>
-                <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; 
-                           background-color: #f0f0f0; font-size: 0.8em;">{entity['type']}</span>
-            </div>
-            <p style="margin: 8px 0;">Occurrences: {entity['occurrences']}</p>
-            <p style="margin: 8px 0;">Sentiment: {entity['sentiment'].capitalize()}</p>
-            <div style="height: 8px; background-color: #e0e0e0; border-radius: 4px; margin-top: 8px;">
-                <div style="height: 100%; border-radius: 4px; width: {confidence_width}; 
-                          background-color: {bg_color};"></div>
-            </div>
-            <p style="text-align: right; font-size: 0.8em; margin: 5px 0 0 0;">Confidence: {confidence_pct}</p>
-        </div>
-        """
-    
-    entities_html += """
-        </div>
-    </div>
-    """
-    
-    return entities_html
 
 @app.route("/")
 def index():
@@ -747,7 +768,7 @@ def index():
             .loader {{
                 border: 16px solid #f3f3f3;
                 border-radius: 50%;
-                border-top: 16px solid #3498db;
+                border-top: 16px solid #4CAF50;
                 width: 80px;
                 height: 80px;
                 animation: spin 2s linear infinite;
