@@ -1,10 +1,8 @@
-from flask import Flask, request, render_template_string, url_for
+from flask import Flask, request
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-from urllib.parse import urlparse
 import nltk
 import newspaper
 import tldextract
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from NewsSentiment import TargetSentimentClassifier
 from nltk.tokenize import sent_tokenize
 import re
@@ -189,9 +187,9 @@ def get_publication_details(url):
             elif domain.startswith("the") and domain[3:] in publication_mapping:
                 details["name"] = publication_mapping[domain[3:]]
             else:
-                # Fallback to basic formatting with some improvements
+                # Fallback to basic formatting
                 if domain.startswith("the"):
-                    # Properly capitalize "The" for publications
+                    # Properly capitalise "The" for publications
                     words = domain.split("-")
                     capitalized_words = [word.capitalize() for word in words]
                     details["name"] = " ".join(capitalized_words)
@@ -562,7 +560,7 @@ def generate_entities_html(top_entities):
                 <span class="slider round"></span>
         </label>
         </div>
-        <div style="margin-top: 15px;" id="topEntitiesContent">
+        <div class="collapsible-content active" id="topEntitiesContent">
     """
     
     for entity in top_entities:
@@ -693,7 +691,7 @@ def get_article_data_from(url):
                         <span class="slider round"></span>
                     </label>
                 </div>
-                <div style="margin-top: 10px; display: none;" id="summaryContent">
+                <div class="collapsible-content" id="summaryContent">
                     <div class="text-plain">{plain_summary}</div>
                     <div class="text-highlighted" style="display: none;">{highlighted_summary}</div>
                 </div>
@@ -707,7 +705,7 @@ def get_article_data_from(url):
                         <span class="slider round"></span>
                     </label>
                 </div>
-                <div style="margin-top: 10px;" id="articleContent">
+                <div class="collapsible-content active" id="articleContent">
                     <div class="text-plain">{plain_text}</div>
                     <div class="text-highlighted" style="display: none;">{highlighted_text}</div>
                 </div>
@@ -721,7 +719,11 @@ def get_article_data_from(url):
             const summaryContent = document.getElementById('summaryContent');
             
             summaryToggle.addEventListener('change', function() {{
-                summaryContent.style.display = this.checked ? 'block' : 'none';
+                if(this.checked) {{
+                    summaryContent.classList.add('active');
+                }} else {{
+                    summaryContent.classList.remove('active');
+                }}
             }});
             
             // Toggle for article text section
@@ -729,15 +731,26 @@ def get_article_data_from(url):
             const articleContent = document.getElementById('articleContent');
             
             articleToggle.addEventListener('change', function() {{
-                articleContent.style.display = this.checked ? 'block' : 'none';
+                if(this.checked) {{
+                    articleContent.classList.add('active');
+                }} else {{
+                    articleContent.classList.remove('active');
+                }}
             }});
+
             // Toggle for top entities section
             const topEntitiesToggle = document.getElementById('topEntitiesToggle');
             const topEntitiesContent = document.getElementById('topEntitiesContent');
             
+            if(topEntitiesToggle && topEntitiesContent) {{
             topEntitiesToggle.addEventListener('change', function() {{
-                topEntitiesContent.style.display = this.checked ? 'block' : 'none'; 
-            }});
+                if(this.checked) {{
+                    topEntitiesContent.classList.add('active');
+                }} else {{
+                    topEntitiesContent.classList.remove('active');
+                }}
+            }}); 
+        }}
         }});
         </script>
         """
@@ -763,6 +776,20 @@ def index():
         <title>Article Bias Indicator</title>
         <style>
             body {{ font-family: Arial, sans-serif; margin: 20px;  }}
+
+            /* Animation styles for collapsible sections */
+            .collapsible-content {{
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.5s ease-out, opacity 0.3s ease-out;
+                opacity: 0;
+            }}
+    
+            .collapsible-content.active {{
+                max-height: 10000px; /* Large enough to contain all content */
+                opacity: 1;
+                transition: max-height 0.5s ease-in, opacity 0.5s ease-in;
+            }}
 
             /* Loading bar styles */
             .loader {{
@@ -832,12 +859,15 @@ def index():
             .slider.round:before {{
                 border-radius: 50%;
             }}
-            
-            /* Fade-in transition for results */
-            .results-container {{
-                opacity: 0;
-                transition: opacity 1s ease-in-out;
+
+            .fade-in {{
+                transition: opacity 0.5s ease-in-out;
             }}
+
+            .visible {{
+                opacity: 1 !important;
+            }}
+            
         </style>
 
         <script>
@@ -874,10 +904,10 @@ def index():
                     // Auto show results if URL is already in the form
                     const url = document.getElementById('url').value;
                     if (url) {{
-                        const resultsContainer = document.getElementById('resultsContainer');
-                        if (resultsContainer) {{
+                        const results = document.getElementById('results');
+                        if (results) {{
                             setTimeout(function() {{
-                                resultsContainer.style.opacity = '1';
+                                results.classList.add('visible');
                             }}, 300);
                         }}
                     }}
@@ -896,16 +926,19 @@ def index():
                 // Show loading indicator and hide results
                 function showLoader() {{
                     document.getElementById("loader").style.display = "block";
-                    const resultsContainer = document.getElementById("resultsContainer");
-                    if (resultsContainer) {{
-                        resultsContainer.style.opacity = "0";
+                    const results = document.getElementById("results");
+                    if (results) {{
+                        results.classList.remove('visible');
                     }}
                     return true;
                 }}
         </script>
     </head>
-    <body style="background-color: moccasin; display: flex; flex-direction: column; align-items: center; text-align: justify; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
-            <form id="analysisForm" action="" method="get" style="width: 100%; max-width: 600px; margin: 20px; text-align: center;">
+    <body style="background-color: navajowhite; display: flex; flex-direction: column; align-items: center; text-align: justify; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
+            <div style="text-align: center; max-width: 600px; padding: 10px;"
+            <p>This tool detects <b>sentiment</b> in news articles, indicating an author’s bias for or against a given subject. It can show positive, neutral, or negative sentiment towards people, locations, and organisations. <b>It will occasionally make mistakes</b> and is intended only as a starting point to get you thinking about author bias.<br>Created by Alexander Broad <a href="https://github.com/AlexanderBroad/DissProject" target="_blank">(GitHub repository)</a></p>
+            </div>
+            <form id="analysisForm" action="" method="get" style="width: 100%; max-width: 600px; margin: 20px; text-align: center; line-height: 1.6;">
                 <label for="url"><strong>ENTER ARTICLE URL BELOW:</strong></label><br>
                 <input type="url" id="url" name="url" value="{url}" style="width: 100%; padding: 10px; margin: 20px 0; strong;"><br>
                 <input type="submit" value="ANALYSE ARTICLE" style="padding: 10px; background-color: #4CAF50; color: black; border: 3px black; cursor: pointer;">
@@ -913,7 +946,7 @@ def index():
 
             <div id="loader" class="loader"></div>
 
-            <div id="results" style="width: 100%; max-width: 800px; margin: 20px;">
+            <div id="results" class="fade-in" style="width: 100%; max-width: 800px; margin: 20px; opacity: 0;">
                 {extracted_article_data}
             </div>
 
