@@ -1,6 +1,8 @@
 from flask import Flask, request
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+import os
 import nltk
+from google.cloud import storage
 import newspaper
 import tldextract
 from NewsSentiment import TargetSentimentClassifier
@@ -11,13 +13,35 @@ import html
 app = Flask(__name__)
 
 def initialize_nltk():
-    """Download required NLTK data"""
-    nltk.download('punkt', quiet=True)
-    nltk.download('vader_lexicon', quiet=True)
+    """Locate NLTK data"""
+    
+    # Add app directory to NLTK's data path
+    nltk.data.path.append(os.path.join(os.path.dirname(__file__), "nltk_data"))
+    
+    #bucket_name = "article-bias-indicator.appspot.com/nltk_data"
+    #nltk_data_dir = "/tmp/nltk_data"
+    
+    # Create directories
+    #for subdir in ["tokenizers", "sentiment"]:
+    #    os.makedirs(f"{nltk_data_dir}/{subdir}", exist_ok=True)
+    
+    # Initialize GCS client
+    #storage_client = storage.Client()
+    #bucket = storage_client.bucket(bucket_name)
+    
+    # List all blobs in bucket and download them
+    #blobs = bucket.list_blobs()
+    #for blob in blobs:
+    #    destination_path = f"/tmp/{blob.name}"
+    #    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+    #    blob.download_to_filename(destination_path)
+    
+    # Add the directory to NLTK's search path
+    #nltk.data.path.append(nltk_data_dir)
 
 def get_publication_details(url):
     """
-    Extract publication details from the URL with proper error handling`
+    Extract publication details from the URL with error handling
     """
     try:
         # Use tldextract to get domain information
@@ -222,43 +246,57 @@ def filter_authors(authors, publication_name):
     
     # Convert publication name to lowercase for case-insensitive comparison
     pub_name_lower = str(publication_name).lower()
+
+    # Extract individual words from publication name for better matching
+    pub_name_words = set([word.lower() for word in pub_name_lower.split() if len(word) > 2])
     
     # Common publication words that might appear in author lists
-    common_pub_words = ['www.facebook.com', 'news', 'times', 'post', 'daily', 'guardian', 'mail', 
-                        'journal', 'chronicle', 'tribune', 'gazette', 'herald', 'bbc']
+    common_pub_words = [
+        'www.facebook.com', 'news', 'times', 'post', 'daily', 'guardian', 'mail', 
+        'journal', 'chronicle', 'tribune', 'gazette', 'herald', 'bbc', 'nyt', 'nytimes',
+        'ap', 'reuters', 'associated press', 'press', 'media', 'network', 'agency',
+        'magazine', 'publications', 'publisher', 'staff', 'correspondent', 'reporter',
+        'editor', 'wire', 'syndicate', 'press association', 'bloomberg', 'cnbc', 'cnn'
+    ]
     
     filtered_authors = []
     seen_authors = set()  # To track normalized versions of authors already added
+
     for author in authors:
         # Skip if the author name is empty or just whitespace
         if not author or author.strip() == '':
             continue
-            
+        
+        author_lower = author.lower().strip()
+
         # Skip if the author name is the publication name
-        if author.lower() == pub_name_lower:
+        if author_lower == pub_name_lower:
             continue
             
-        # Skip if the author name contains the publication name and is less than 35 characters
+        # Skip if the author name contains the publication name and is less than 50 characters
         # (To avoid filtering out quotes that legitimately contain the publication name)
-        if pub_name_lower in author.lower() and len(author) < 35:
+        if pub_name_lower in author_lower and len(author) < 50:
+            # But don't skip if it looks like a genuine person with the publication
+            if ',' not in author_lower and ' - ' not in author_lower:
+                continue
+            
+        # Check if this author contains multiple words from the publication name
+        author_words = set(author_lower.split())
+        if len(pub_name_words.intersection(author_words)) >= min(2, len(pub_name_words)) and len(author) < 35:
             continue
             
-        # Skip if the author name is just one of the common publication words
-        if author.lower() in common_pub_words:
+        # Skip common publication identifiers
+        if any(pub_word in author_lower for pub_word in common_pub_words) and len(author) < 25:
             continue
-
-        # Create a normalized version of the author name for comparison
-        # Remove spaces, hyphens, underscores and convert to lowercase
-        normalized_author = author.lower()
-        normalized_author = normalized_author.replace(' ', '').replace('-', '').replace('_', '')
-
-        # Skip if we've already seen this author (based on normalized name)
+        
+        # Create a normalized version of the author name
+        normalized_author = ''.join(c.lower() for c in author if c.isalnum())
+        
+        # Skip duplicates
         if normalized_author in seen_authors:
             continue
             
-        # Add this normalized version to our seen set
         seen_authors.add(normalized_author)
-
         filtered_authors.append(author)
     
     return filtered_authors
@@ -266,7 +304,7 @@ def filter_authors(authors, publication_name):
 def analyze_sentiment_newssentiment(text):
     """
     Analyze sentiment of text using NewsSentiment with sentence-level chunking
-    for handling long texts and proper entity sentiment analysis
+    for handling long texts and entity sentiment analysis
     """
     if not text:
         return "", "", {}
@@ -670,7 +708,7 @@ def get_article_data_from(url):
             {entities_html}
 
             <div style="margin-bottom: 15px;" id="sentiment-controls">
-                <div id="sentiment-legend" style="opacity: 0.3; margin-bottom: 10px; transition: opacity 0.3s ease;">
+                <div id="sentiment-legend" style="opacity: 1; margin-bottom: 10px; transition: opacity 0.3s ease;">
                     <strong>📊 SENTIMENT LEGEND:</strong><br>
                     <span style="background-color: #90EE90; padding: 0 5px;">Positive</span>
                     <span style="background-color: #F0F8FF; padding: 0 5px; margin: 0 10px;">Neutral</span>
@@ -772,7 +810,7 @@ def index():
     <html>
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=0.9">
         <title>Article Bias Indicator</title>
         <style>
             body {{ font-family: Arial, sans-serif; margin: 20px;  }}
@@ -957,4 +995,4 @@ def index():
     """
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
