@@ -2,7 +2,6 @@ from flask import Flask, request
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 import os
 import nltk
-from google.cloud import storage
 import newspaper
 import tldextract
 from NewsSentiment import TargetSentimentClassifier
@@ -17,28 +16,7 @@ def initialize_nltk():
     
     # Add app directory to NLTK's data path
     nltk.data.path.append(os.path.join(os.path.dirname(__file__), "nltk_data"))
-    
-    #bucket_name = "article-bias-indicator.appspot.com/nltk_data"
-    #nltk_data_dir = "/tmp/nltk_data"
-    
-    # Create directories
-    #for subdir in ["tokenizers", "sentiment"]:
-    #    os.makedirs(f"{nltk_data_dir}/{subdir}", exist_ok=True)
-    
-    # Initialize GCS client
-    #storage_client = storage.Client()
-    #bucket = storage_client.bucket(bucket_name)
-    
-    # List all blobs in bucket and download them
-    #blobs = bucket.list_blobs()
-    #for blob in blobs:
-    #    destination_path = f"/tmp/{blob.name}"
-    #    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
-    #    blob.download_to_filename(destination_path)
-    
-    # Add the directory to NLTK's search path
-    #nltk.data.path.append(nltk_data_dir)
-
+ 
 def get_publication_details(url):
     """
     Extract publication details from the URL with error handling
