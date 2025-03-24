@@ -279,9 +279,9 @@ def filter_authors(authors, publication_name):
     
     return filtered_authors
 
-def analyze_sentiment_newssentiment(text):
+def analyse_sentiment_newssentiment(text):
     """
-    Analyze sentiment of text using NewsSentiment with sentence-level chunking
+    Analyse sentiment of text using NewsSentiment with sentence-level chunking
     for handling long texts and entity sentiment analysis
     """
     if not text:
@@ -350,7 +350,7 @@ def analyze_sentiment_newssentiment(text):
             # Check if sentence length is within model's token limit
             tokens = tokenizer.encode(sentence)
             if len(tokens) > 510:  # Leave room for special tokens
-                # For extra long sentences, split into phrases by punctuation
+                # For extra long sentences, split into phrases by word boundaries while respecting token limits
                 phrases = []
                 current_phrase = ""
                 
@@ -466,7 +466,7 @@ def process_chunk(chunk, chunk_position, nlp, tsc, entity_sentiments, entity_dat
     for entity in ner_results:
         entity_text = entity['word']
         
-        # Only process if it's a person (PER) or organization (ORG)
+        # Only process if it's a person (PER), organisation (ORG), location (LOC), or miscellaneous (MISC)
         if entity['entity_group'] not in ['PER', 'ORG', 'LOC', 'MISC']:
             continue
             
@@ -580,7 +580,7 @@ def generate_entities_html(top_entities):
     """
     
     for entity in top_entities:
-        # Determine the color based on sentiment
+        # Determine the colour based on sentiment
         if entity["sentiment"] == "positive":
             border_colour = "#90EE90"  # Light green
             bg_colour = "#90EE90"
@@ -644,8 +644,8 @@ def get_article_data_from(url):
         article_summary = article.summary if article.summary else "No summary available"
 
         # Get both highlighted and plain versions of the text
-        highlighted_text, plain_text, entity_sentiments = analyze_sentiment_newssentiment(article_text)
-        highlighted_summary, plain_summary, _ = analyze_sentiment_newssentiment(article_summary)
+        highlighted_text, plain_text, entity_sentiments = analyse_sentiment_newssentiment(article_text)
+        highlighted_summary, plain_summary, _ = analyse_sentiment_newssentiment(article_summary)
 
         # Generate top 5 entities report
         top_entities = generate_top_entities_report(entity_sentiments)
